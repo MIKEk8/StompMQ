@@ -1,0 +1,27 @@
+{
+    "name": "mikek8/stomp-mq",
+    "description": "Easy Stomp MQ",
+    "keywords": [
+        "stomp",
+        "activemq",
+        "rabbitmq",
+        "apollomq"
+    ],
+    "type": "library",
+    "require": {
+        "php": "^7.1",
+        "stomp-php/stomp-php": "^4.4"
+    },
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Ekaterinichev Mikhail",
+            "email": "ema@equifax.ru"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "StompMQ\\": "./"
+        }
+    }
+}
