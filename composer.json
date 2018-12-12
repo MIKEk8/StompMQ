@@ -21,7 +21,8 @@
     ],
     "autoload": {
         "psr-4": {
-            "StompMQ\\": "./"
+            "mikek8\\lib\\": "./",
+            "mikek8\\traits\\": "./"
         }
     }
 }

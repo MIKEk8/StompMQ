@@ -7,7 +7,7 @@
  * Version: v1.0
  */
 
-namespace StompMQ;
+namespace mikek8\traits;
 
 use Stomp\Client;
 use Stomp\Exception\StompException;
@@ -75,6 +75,7 @@ trait TraitStompMQ
         $this->stomp = new SimpleStomp($this->client);
         return true;
     }
+
     /**
      * Returns the value of an object property.
      *
@@ -90,7 +91,8 @@ trait TraitStompMQ
         $getter = 'get' . $name;
         if (method_exists($this, $getter)) {
             return $this->$getter();
-        } elseif (method_exists($this, 'set' . $name)) {
+        }
+        if (method_exists($this, 'set' . $name)) {
             throw new \Exception('Getting write-only property: ' . get_class($this) . '::' . $name);
         }
 
@@ -117,6 +119,11 @@ trait TraitStompMQ
         } else {
             throw new \Exception('Setting unknown property: ' . get_class($this) . '::' . $name);
         }
+    }
+
+    public function __isset($name)
+    {
+        return method_exists($this, 'get' . $name) || method_exists($this, 'set' . $name);
     }
 
     public function getQueue()
@@ -172,20 +179,6 @@ trait TraitStompMQ
     }
 
     /**
-     * Подписывание на очередь
-     */
-    protected function subscribe()
-    {
-        if ($this->signed) {
-            return true;
-        }
-        $this->open();
-        $this->stomp->subscribe($this->queue, $this->queue, 'client-individual');
-        $this->signed = true;
-        return true;
-    }
-
-    /**
      * Отписывание от очереди
      */
     public function unsubscribe()
@@ -206,6 +199,8 @@ trait TraitStompMQ
     /**
      * Отправка сообщение в MQ
      * @param string $msg
+     * @throws \Stomp\Exception\ConnectionException
+     * @throws StompException
      */
     public function write($msg)
     {
@@ -258,13 +253,17 @@ trait TraitStompMQ
      */
     public function watch($callback)
     {
-        $this->outer_sig_handler = \pcntl_signal_get_handler(\SIGTERM);
-        \pcntl_signal(\SIGTERM, [$this, 'sig_die']); //Включаем обработчик сигнала kill
+        $ext = extension_loaded('ext-pcntl');
+        if ($ext) {
+            $this->outer_sig_handler = \pcntl_signal_get_handler(\SIGTERM);
+            \pcntl_signal(\SIGTERM, [$this, 'sig_die']); //Включаем обработчик сигнала kill
+        }
         declare(ticks=1) { //Проверяем сигнал для kill только в безопасной области, пока апись не получена из очереди
             $record = $this->read();
         }
-        \pcntl_signal(\SIGTERM, $this->outer_sig_handler);
-
+        if ($ext) {
+            \pcntl_signal(\SIGTERM, $this->outer_sig_handler);
+        }
         try {
             \call_user_func($callback, $record->body);
         } catch (\Exception $e) {
@@ -285,5 +284,20 @@ trait TraitStompMQ
         if (\is_callable($outer_sig_handler)) {
             $outer_sig_handler();
         }
+    }
+
+    /**
+     * Подписывание на очередь
+     * @throws \Stomp\Exception\ConnectionException
+     */
+    protected function subscribe()
+    {
+        if ($this->signed) {
+            return true;
+        }
+        $this->open();
+        $this->stomp->subscribe($this->queue, $this->queue, 'client-individual');
+        $this->signed = true;
+        return true;
     }
 }

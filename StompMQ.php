@@ -6,8 +6,9 @@
  * Time: 18:45
  */
 
-namespace StompMQ;
+namespace mikek8\lib;
 
+use mikek8\traits\TraitStompMQ;
 
 class StompMQ
 {
